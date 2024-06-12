@@ -2,33 +2,41 @@
 // - Takes in a value of transaction and put it into a block
 module main {
     type signature_t;
+    type private_key_t;
+    type public_key_t;
 
     type transaction = record { timestamp : integer, signature : signature_t };
 
-    function sign(tx : transaction) : signature_t;
+    function sign(prev_tx : transaction, new_owner_pub : public_key_t, prev_owner_pri : private_key_t) : signature_t;
     function verify(tx : transaction, sig : signature_t) : boolean;
-    function receive_transaction() : transaction;
+    function mine_block() : transaction;
+    function init_transaction(t : integer, sig : signature_t) : transaction;
+    function next_owner_pub_key() : public_key_t;
 
-    procedure create_transaction(i : integer) modifies blocks; {
-        blocks[i] = receive_transaction();
+    procedure create_transaction(i : integer, timestamp : integer, pub : public_key_t, prev : private_key_t) modifies blocks; {
+        blocks [i + 1] = init_transaction(timestamp, sign(blocks[i], pub, prev));
     }
 
     var blocks : [integer]transaction;
     var index : integer;
     var timestamp : integer;
+    var pub : public_key_t;
+    var pri : private_key_t;
 
     init {
-        index = 0;
+        blocks[0] = mine_block();
+        index = 1;
         timestamp = 0;
     }
 
     next {
-        call create_transaction(index);
+        call create_transaction(index, timestamp, next_owner_pub_key(), pri);
         index' = index + 1;
         timestamp' = timestamp + 1;
+        // assert (blocks[index - 1].timestamp < blocks[index].timestamp);
     }
 
-    property[LTL] newer_txs_have_later_timestamps : G (forall (i : integer) :: blocks[i].timestamp < blocks[i+1].timestamp);
+    property[LTL] newer_txs_have_later_timestamps : G (forall (i : integer) :: blocks[i].timestamp < blocks[i + 1].timestamp);
 
     control {
         bmc(10);
