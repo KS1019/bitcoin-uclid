@@ -27,10 +27,11 @@ ENV PATH="/uclid/uclid-0.9.5/bin/:${PATH}"
 # Copy `./bin/z3` to `/uclid/uclid-0.9.5/bin/`
 COPY ./bin/z3 /uclid/uclid-0.9.5/bin/
 
-COPY ./test.ucl /uclid/
-
 # Add `LD_LIBRARY_PATH` to the environment variable
 ENV LD_LIBRARY_PATH="/uclid/uclid-0.9.5/bin/:${LD_LIBRARY_PATH}"
 
+# Copy `/src` to `/src` in the container
+COPY ./src /src
+
 # Set the working directory
-WORKDIR /uclid
+WORKDIR /src
