@@ -1,0 +1,38 @@
+// Node:
+// - Takes in a value of transaction and put it into a block
+module main {
+    type signature_t;
+
+    type transaction = record { timestamp : integer, signature : signature_t };
+
+    function sign(tx : transaction) : signature_t;
+    function verify(tx : transaction, sig : signature_t) : boolean;
+    function receive_transaction() : transaction;
+
+    procedure create_transaction(i : integer) modifies blocks; {
+        blocks[i] = receive_transaction();
+    }
+
+    var blocks : [integer]transaction;
+    var index : integer;
+    var timestamp : integer;
+
+    init {
+        index = 0;
+        timestamp = 0;
+    }
+
+    next {
+        call create_transaction(index);
+        index' = index + 1;
+        timestamp' = timestamp + 1;
+    }
+
+    property[LTL] newer_txs_have_later_timestamps : G (forall (i : integer) :: blocks[i].timestamp < blocks[i+1].timestamp);
+
+    control {
+        bmc(10);
+        check;
+        print_results;
+    }
+}
